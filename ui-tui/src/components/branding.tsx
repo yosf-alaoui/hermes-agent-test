@@ -55,21 +55,10 @@ export function ArtLines({ lines }: { lines: [string, string][] }) {
 // Terminals can't scale glyphs, so "responsive" means picking a layout that
 // fits the available columns. Thresholds are picked so each tier reads
 // comfortably without forcing wrap or truncation drift on box-drawing edges.
-// Taglines live in the catalog (chatBits.branding.tagFull/tagMid); the tiny
-// tier is the bare brand name and stays untranslated.
-const TAG_TINY = 'Nous Research'
 const HIDE_BELOW = 34
 const COMPACT_FROM = 58
 
 const clip = (s: string, w: number) => (w <= 0 ? '' : s.length > w ? `${s.slice(0, Math.max(0, w - 1))}…` : s)
-
-const centerIn = (s: string, w: number) => {
-  const f = clip(s, w)
-  const slack = Math.max(0, w - f.length)
-  const left = slack >> 1
-
-  return `${' '.repeat(left)}${f}${' '.repeat(slack - left)}`
-}
 
 const ruleIn = (label: string, w: number) => {
   const f = clip(label, Math.max(1, w - 4))
@@ -80,30 +69,24 @@ const ruleIn = (label: string, w: number) => {
 }
 
 function CompactBanner({ cols, t }: { cols: number; t: Theme }) {
-  const T = useT().chatBits.branding
   // -4 keeps a margin so exact-edge rows don't trip terminal pending-wrap.
   const w = Math.max(28, cols - 4)
 
-  // No `opaque` (see ArtLines): the dashed rules are glyphs and the tagline's
-  // centering spaces carry the text's own fg style, so every cell paints with
-  // a real see-through background. The opaque fill was writing default-bg
-  // spaces that a transparent terminal renders as black bars.
+  // No `opaque` (see ArtLines): keep the rules transparent.
   // NOT bold: on Cursor's transparent-background terminal, a full-width run
   // of BOLD box-drawing dashes renders with an opaque black cell background
   // (the plain-dash rule right below renders clean — pixel-diffed live; the
   // only stylistic delta was bold). Bold on short label runs is fine; bold on
   // full-width box-drawing rows is what triggers the slab.
   return (
-    <Box flexDirection="column" height={3} marginBottom={1} width={w}>
+    <Box flexDirection="column" height={2} marginBottom={1} width={w}>
       <Text color={t.color.primary}>{ruleIn(t.brand.name, w)}</Text>
-      <Text color={t.color.muted}>{centerIn(T.tagFull, w)}</Text>
       <Text color={t.color.primary}>{'─'.repeat(w)}</Text>
     </Box>
   )
 }
 
 export function Banner({ maxWidth, t }: { maxWidth?: number; t: Theme }) {
-  const T = useT().chatBits.branding
   const term = useStdout().stdout?.columns ?? 80
   const cols = Math.max(1, Math.min(term, maxWidth ?? term))
 
@@ -129,15 +112,7 @@ export function Banner({ maxWidth, t }: { maxWidth?: number; t: Theme }) {
           paddingY={0}
           rowGap={0}
           widgets={[
-            { children: <ArtLines lines={logoLines} />, id: 'banner-art' },
-            {
-              children: (
-                <Text color={t.color.muted} wrap="truncate-end">
-                  {t.brand.icon} {T.tagFull}
-                </Text>
-              ),
-              id: 'banner-tagline'
-            }
+            { children: <ArtLines lines={logoLines} />, id: 'banner-art' }
           ]}
         />
       </Box>
@@ -159,7 +134,6 @@ export function Banner({ maxWidth, t }: { maxWidth?: number; t: Theme }) {
   }
 
   const name = cols >= 52 ? t.brand.name : (t.brand.name.split(' ')[0] ?? t.brand.name)
-  const tag = cols >= 64 ? T.tagFull : cols >= 46 ? T.tagMid : TAG_TINY
 
   return (
     <Box flexDirection="column" marginBottom={1}>
@@ -178,14 +152,6 @@ export function Banner({ maxWidth, t }: { maxWidth?: number; t: Theme }) {
               </Text>
             ),
             id: 'banner-name'
-          },
-          {
-            children: (
-              <Text color={t.color.muted} wrap="truncate-end">
-                {t.brand.icon} {tag}
-              </Text>
-            ),
-            id: 'banner-tag'
           }
         ]}
       />

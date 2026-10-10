@@ -1890,12 +1890,12 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
         <div
           ref={termWrapRef}
           className={cn(
-            "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg",
+            "hermes-chat-pane relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg",
             "p-2 sm:p-3",
           )}
           style={{
             backgroundColor: terminalBg,
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+            boxShadow: "var(--component-card-box-shadow, 0 8px 32px rgba(0, 0, 0, 0.4))",
           }}
         >
           <div

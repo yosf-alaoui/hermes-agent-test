@@ -222,6 +222,45 @@ export const nousBlueTheme: DashboardTheme = {
   swatchColors: ["#170d02", "#0053FD", "#E8F2FD"],
 };
 
+export const cleanWhiteTheme: DashboardTheme = {
+  name: "clean-white",
+  label: "Clean White",
+  description: "White canvas, clear typography, and quiet borders",
+  palette: {
+    background: { hex: "#ffffff", alpha: 1 },
+    midground: { hex: "#1f2937", alpha: 1 },
+    foreground: { hex: "#111827", alpha: 0 },
+    warmGlow: "rgba(0, 0, 0, 0)",
+    noiseOpacity: 0,
+  },
+  typography: { ...DEFAULT_TYPOGRAPHY, baseSize: "16px", lineHeight: "1.6" },
+  layout: { ...DEFAULT_LAYOUT, radius: "0.75rem" },
+  terminalBackground: "#ffffff",
+  terminalForeground: "#1f2937",
+  colorOverrides: {
+    card: "#ffffff", cardForeground: "#1f2937",
+    popover: "#ffffff", popoverForeground: "#1f2937",
+    primary: "#2563eb", primaryForeground: "#ffffff",
+    secondary: "#f3f4f6", secondaryForeground: "#374151",
+    muted: "#f9fafb", mutedForeground: "#64748b",
+    accent: "#eff6ff", accentForeground: "#1d4ed8",
+    border: "#e5e7eb", input: "#d1d5db", ring: "#2563eb",
+    warning: "#92400e", destructive: "#b91c1c", success: "#15803d",
+  },
+  componentStyles: {
+    sidebar: { background: "#f9fafb" },
+    card: { boxShadow: "0 2px 12px rgba(15, 23, 42, 0.04)" },
+  },
+  customCSS: `
+    body { --font-mondwest: var(--theme-font-sans); }
+    .font-mondwest, .font-display { font-family: var(--theme-font-sans); }
+    .hermes-chat-pane { border: 1px solid #e5e7eb; }
+    .grain::after { display: none; }
+  `,
+  seriesColors: { inputTokenAccent: "#64748b", outputTokenAccent: "#2563eb" },
+  swatchColors: ["#ffffff", "#1f2937", "#2563eb"],
+};
+
 /**
  * Same look as ``defaultTheme`` but with a larger root font size, looser
  * line-height, and ``spacious`` density so every rem-based size in the
@@ -247,6 +286,7 @@ export const BUILTIN_THEMES: Record<string, DashboardTheme> = {
   default: defaultTheme,
   "default-large": defaultLargeTheme,
   "nous-blue": nousBlueTheme,
+  "clean-white": cleanWhiteTheme,
   midnight: midnightTheme,
   ember: emberTheme,
   mono: monoTheme,
