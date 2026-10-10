@@ -53,13 +53,43 @@
 - Ollama الرسمي: `0.40.2`، تحت `local-model-runtime/ollama-v0.40.2`.
 - النموذج الحالي: `my-agent:qwen3.5-4b` مبني على `qwen3.5:4b`، بحجم معلن 4.2B، GGUF بضغط `Q4_K_M`. طبقة الأوزان حوالي 2.65GB وملف دعم الصور حوالي 0.68GB؛ النموذج المحمّل بسياق 65536 استهلك نحو 4.09GB على CPU.
 - التعريف الحالي في [Modelfile.qwen35](../local-model/Modelfile.qwen35). التعريف السابق `my-agent:4b` محفوظ في [Modelfile](../local-model/Modelfile) وأوزانه باقية للرجوع إليه. التخصيص هو اسم وإعدادات ورسالة نظام؛ الأوزان لم تُدرب أو تُضبط بعد.
-- واجهة الاستدلال: `http://127.0.0.1:11434/v1`، provider هو `custom`؛ لا تحتاج إلى مفتاح API سحابي.
+- واجهة الاستدلال: `http://127.0.0.1:11434/v1`، الاختيار `custom:local-project` ويُحل داخليًا إلى `custom`؛ لا يحتاج مفتاح API سحابي. يمرر الإعداد `temperature: 0.2` و`presence_penalty: 0` لتقليل عشوائية توليد الأوامر، دون تغيير الأوزان أو تعريف Ollama.
 - التفكير المطوّل معطل حاليًا عبر `agent.reasoning_effort: none` لتقليل زمن الرد؛ يمكن إعادة تقييمه لاحقًا.
 - السياق الفعلي: `65536`، مع `OLLAMA_NUM_PARALLEL=1` و`OLLAMA_MAX_LOADED_MODELS=1` وذاكرة KV من نوع `q4_0` وflash attention.
-- الأدوات الأولية عبر `platform_toolsets.cli`: `memory`, `session_search`, `todo`. أدوات تنفيذ الطرفية وتصفح الويب ليست ضمن مجموعة التشغيل الأولية؛ توسيع القدرات يحتاج إلى ضبط الحماية والموارد أولًا.
+- الأدوات الحالية عبر `platform_toolsets.cli`: `memory`, `session_search`, `todo`, `terminal`, `file`, `skills`. أُضيفت أدوات التطوير بطلب المستخدم في الجلسة 010؛ لا يزال تصفح الويب العام خارج المجموعة. يمكن الوصول إلى GitHub وتنزيل الملفات عبر `gh` وGit في الطرفية.
 - الإرسال الاختياري للإحصاءات معطل في `telemetry.shared_metrics`، وOllama يبدأ مع `OLLAMA_NO_CLOUD=1`.
 - الجهاز: Intel i7-8750H و16GB RAM؛ Ollama هنا يعمل على CPU. عزل مجلد البيانات ليس حاوية أمان للنظام.
 - سجل الخادم: `<HERMES_HOME>/logs/ollama-server.log`. الأوزان: `<HERMES_HOME>/models/`. هذه الملفات محلية ولا تُرفع إلى المستودع العام.
+
+## الدارجة وأدوات تطوير GitHub
+
+الشخصية الحالية `project-assistant` تجمع [تعليمات الدارجة](../local-model/darija-system.txt) و[تعليمات التطوير](../local-model/development-system.txt). هي تعليمات وقت الاستدلال وليست تدريبًا للأوزان. اختبار النموذج دون هذه التعليمات أعطى تعابير غير مغربية، وتحسن جواب قصير مع الأمثلة، لكن ظهرت أيضًا تعابير ضعيفة في سؤال آخر؛ لا يوجد تقييم شامل يثبت إتقان الدارجة.
+
+افتح **New chat** من واجهة الويب لتحميل الأدوات والشخصية الجديدة. لتغيير أسلوب محادثة قديمة دون حذفها، استعمل `/personality project-assistant`؛ هذا يغيّر الأسلوب، ولا يضيف الأدوات التي لم تكن موجودة عند بدء المحادثة. الجلسات السابقة وذاكرتها باقية.
+
+تستخدم أداة `terminal` المحلية مصادقة GitHub CLI الموجودة في keyring، ولا تنسخ رمزًا إلى `.env`. على هذا الجهاز يوجد CLI في `$HOME/.local/bin/gh`؛ إذا لم يكن `gh` في PATH استخدم المسار المذكور. مهارة `github` المدمجة متاحة عبر `skill_view`. نجحت قراءة المستودع وتنزيل ملف عام منه والتحقق من مطابقته عبر أداة الطرفية نفسها.
+
+لإعادة تطبيق الإعداد على تثبيت آخر بعد مصادقة `gh`، من جذر المشروع:
+
+```bash
+./start-hermes.command config set agent.personalities.project-assistant "$(cat local-model/darija-system.txt local-model/development-system.txt)"
+./start-hermes.command config set display.personality project-assistant
+./start-hermes.command config set toolsets '[memory, session_search, todo, terminal, file, skills]'
+./start-hermes.command config set platform_toolsets.cli '[memory, session_search, todo, terminal, file, skills]'
+./start-hermes.command config set approvals.mode manual
+./start-hermes.command config set approvals.single_query_mode deny
+./start-hermes.command config set approvals.unattended_mode deny
+./start-hermes.command config set approvals.cron_mode deny
+./start-hermes.command config set security.protected_instruction_files true
+```
+
+الوصول محلي بصلاحيات حساب الجهاز، وليس sandbox أو تقييدًا تقنيًا لمستودع واحد؛ صلاحيات مصادقة GitHub القائمة أوسع من المستودع المقصود. قواعد العمل تحصر المهمة في المستودع المعتمد، لكنها لا تستبدل العزل. لا يعطل الإعداد موافقات الأوامر الحساسة أو حماية ملفات التعليمات، ولا يشغّل تنزيلًا أو تطويرًا ذاتيًا مستمرًا في الخلفية. مراجعة المصادر وتثبيت الإصدارات والتحقق من السكربتات مطلوبة قبل تشغيل أدوات خارجية.
+
+قبل التغيير حُفظت نسخة `config.yaml` فقط في snapshot محلي ينتهي اسمه بـ`before-developer-tools`، بصلاحيات مجلد `700`، خارج GitHub. ليست نسخة احتياطية كاملة للبيانات.
+
+اختبار Hermes الكامل بالإعداد الأول واجه انتهاء مهلة 900 ثانية قبل أول جزء من الرد، بسياق 13395 رمزًا، ثم أنتج أمرين خاطئين. لم تُعطل الموافقات لتشغيلهما؛ أوقفت جلسة الاختبار المحددة. بعد اختصار تعليمات التطوير وإضافة مثال CLI صحيح وضبط التوليد، نجح اختبار محدود عبر Ollama وأداة Hermes الأصلية: استدعى النموذج `terminal` بالأمر الصحيح، وأعادت الأداة ADMIN، ثم عرض النموذج النتيجة الصحيحة. استغرقت جولتا النموذج 71.6 و7.4 ثانية؛ هذا اختبار بسياق أصغر وأداة واحدة، وليس إعادة تحقق كاملة لمسار الواجهة بكل أدواتها.
+
+ضُبطت مهلة انعدام أجزاء الرد لهذا النموذج المحلي فقط إلى 1800 ثانية ومهلة الطلب إلى 1900 عبر `providers.custom.models`. هذا يسمح ببداية باردة بطيئة بدل قطعها عند 15 دقيقة؛ لا يجعل التنفيذ أسرع. جودة العمل البرمجي العام والأوامر خارج الاختبار المحدود تحتاج تقييمًا مستقلًا.
 
 ## تثبيت جديد أو الانتقال إلى جهاز آخر
 
@@ -85,15 +115,28 @@ ollama create my-agent:qwen3.5-4b -f local-model/Modelfile.qwen35
 ```yaml
 model:
   default: my-agent:qwen3.5-4b
-  provider: custom
+  provider: custom:local-project
   base_url: http://127.0.0.1:11434/v1
   context_length: 65536
   ollama_num_ctx: 65536
+custom_providers:
+  - name: local-project
+    base_url: http://127.0.0.1:11434/v1
+    model: my-agent:qwen3.5-4b
+    extra_body:
+      temperature: 0.2
+      presence_penalty: 0
+providers:
+  custom:
+    models:
+      "my-agent:qwen3.5-4b":
+        stale_timeout_seconds: 1800
+        timeout_seconds: 1900
 agent:
   reasoning_effort: none
-toolsets: [memory, session_search, todo]
+toolsets: [memory, session_search, todo, terminal, file, skills]
 platform_toolsets:
-  cli: [memory, session_search, todo]
+  cli: [memory, session_search, todo, terminal, file, skills]
 display:
   interface: cli
 telemetry:
