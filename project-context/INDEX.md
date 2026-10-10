@@ -7,6 +7,7 @@
 3. [سجل القرارات](DECISIONS.md)
 4. [خطة التطوير والحماية](ROADMAP.md)
 5. [المحادثة الأولى: تأسيس المشروع](chats/2026-10-09-001.md)
+6. [المحادثة الثانية: مصادقة GitHub](chats/2026-10-09-002.md)
 
 المصدر: https://github.com/yosf-alaoui/hermes-agent-test
 التاريخ المرجعي: 2026-10-09 — America/Toronto.
