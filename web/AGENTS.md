@@ -4,7 +4,7 @@ Applies on top of the root `AGENTS.md`. Backend routers: `hermes_cli/web_routers
 dashboard surface, mounted by `hermes_cli/web_server.py` (+ `web_server_*.py` siblings). Frontend:
 `web/src/`. Shared JSON-RPC/WS client: `apps/shared` (`@hermes/shared`), also used by the desktop.
 
-## The dashboard embeds the REAL `hermes --tui` — not a rewrite
+## Retained terminal view — the real `hermes --tui`
 
 `hermes_cli/pty_bridge.py` + the `@app.websocket("/api/pty")` endpoint in `web_server.py`:
 
@@ -17,15 +17,21 @@ dashboard surface, mounted by `hermes_cli/web_server.py` (+ `web_server_*.py` si
 - Frames are raw PTY bytes each way; resize travels as `\x1b[RESIZE:<cols>;<rows>]`, intercepted
   on the server and applied with `TIOCSWINSZ`.
 
-**Do not re-implement the primary chat experience in React.** Transcript, composer/input flow
-(including slash-command behaviour), and the PTY-backed terminal belong to the embedded TUI; anything
-added to Ink shows up here automatically. If you are rebuilding the transcript or composer for the
-dashboard, stop and extend Ink (`tui_gateway/AGENTS.md`).
+## Fork web conversation design
 
-**Structured React UI around the TUI is fine when it is not a second chat surface.** Sidebar
-widgets, inspectors, summaries, status panels (`ChatSidebar`, `ModelPickerDialog`, `ToolCall`)
-complement the embedded TUI. Keep their state independent of the PTY child's session and surface
-their failures non-destructively so the terminal pane keeps working.
+The user's explicit October 10, 2026 request supersedes the upstream terminal-only web design:
+`ConversationPage.tsx` is the primary readable, ChatGPT-style web surface. It calls the **existing**
+`/api/ws` dispatcher through `GatewayClient` / `@hermes/shared`; it must not introduce another agent,
+auth scheme, history store or model loop. Feature-owned code lives in `src/features/conversation/`.
+Persisted and runtime session IDs are distinct; reconnect/resume uses the persisted ID. Approval
+requests require an explicit user answer and remain scoped to the displayed runtime. The browser's
+sessionStorage contains only its current persisted ID; private conversation text stays in SQLite.
+
+The original `ChatPage.tsx` / `/api/pty` experience remains available through `?view=terminal` for
+advanced terminal commands. Keep its transport behavior and tests intact. Support new slash behavior
+through the canonical backend; commands requiring Ink panels are accessed through terminal view.
+The new surface is portaled to `document.body` to escape dashboard transforms/stacking contexts;
+while visible, it hides the old shell. On management routes, the normal dashboard remains visible.
 
 ## `dashboard` vs `serve`
 

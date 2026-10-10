@@ -68,6 +68,10 @@ class FakeTerminal {
     return { dispose() {} };
   }
 
+  onRender() {
+    return { dispose() {} };
+  }
+
   onResize() {
     return { dispose() {} };
   }

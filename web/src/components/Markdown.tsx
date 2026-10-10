@@ -1,4 +1,5 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { copyTextToClipboard } from "@/lib/clipboard";
 
 /**
  * Lightweight markdown renderer for LLM output.
@@ -54,7 +55,8 @@ type BlockNode =
   | { type: "heading"; level: number; content: string }
   | { type: "hr" }
   | { type: "list"; ordered: boolean; items: string[] }
-  | { type: "paragraph"; content: string };
+  | { type: "paragraph"; content: string }
+  | { type: "table"; headers: string[]; rows: string[][] };
 
 /* ------------------------------------------------------------------ */
 /*  Block parser                                                       */
@@ -80,6 +82,15 @@ function parseBlocks(text: string): BlockNode[] {
       }
       i++; // skip closing ```
       blocks.push({ type: "code", lang, content: codeLines.join("\n") });
+      continue;
+    }
+
+    if (isTableStart(lines, i)) {
+      const headers = tableCells(line);
+      i += 2;
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].includes('|') && lines[i].trim()) rows.push(tableCells(lines[i++]));
+      blocks.push({ type: 'table', headers, rows });
       continue;
     }
 
@@ -134,12 +145,7 @@ function parseBlocks(text: string): BlockNode[] {
     const paraLines: string[] = [];
     while (
       i < lines.length &&
-      lines[i].trim() !== "" &&
-      !lines[i].match(/^```/) &&
-      !lines[i].match(/^#{1,4}\s/) &&
-      !lines[i].match(/^[-*+]\s/) &&
-      !lines[i].match(/^\d+[.)]\s/) &&
-      !lines[i].match(/^[-*_]{3,}\s*$/)
+      isParagraphLine(lines, i)
     ) {
       paraLines.push(lines[i]);
       i++;
@@ -167,14 +173,11 @@ function Block({
 }) {
   switch (block.type) {
     case "code":
-      return (
-        <pre className="bg-secondary/60 border border-border px-3 py-2.5 text-xs font-mono leading-relaxed overflow-x-auto">
-          <code>
-            {block.content}
-            {caret}
-          </code>
-        </pre>
-      );
+      return <CodeBlock content={block.content} language={block.lang} caret={caret} />;
+    case "table":
+      return <div className="markdown-table-scroll"><table><thead><tr>{block.headers.map((cell, i) =>
+        <th key={i}><InlineContent text={cell} /></th>)}</tr></thead><tbody>{block.rows.map((row, i) =>
+        <tr key={i}>{block.headers.map((_, j) => <td key={j}><InlineContent text={row[j] || ''} /></td>)}</tr>)}</tbody></table>{caret}</div>;
 
     case "heading": {
       const Tag = `h${Math.min(block.level, 4)}` as "h1" | "h2" | "h3" | "h4";
@@ -380,4 +383,26 @@ function HighlightedText({ text, terms }: { text: string; terms?: string[] }) {
       )}
     </>
   );
+}
+
+function tableCells(line: string): string[] {
+  return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(cell => cell.trim());
+}
+function isTableStart(lines: string[], index: number): boolean {
+  return Boolean(lines[index]?.includes('|') && lines[index + 1]?.includes('|') &&
+    tableCells(lines[index + 1]).every(cell => /^:?-{3,}:?$/.test(cell)));
+}
+function CodeBlock({ content, language, caret }: { content: string; language: string; caret?: ReactNode }) {
+  const [copied, setCopied] = useState(false);
+  return <div className="markdown-code-block">
+    <div className="markdown-code-header"><span>{language || 'code'}</span><button type="button" onClick={() => {
+      void copyTextToClipboard(content).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); });
+    }}>{copied ? 'تم النسخ' : 'نسخ الكود'}</button></div>
+    <pre dir="ltr" className="bg-secondary/60 border border-border px-3 py-2.5 text-xs font-mono leading-relaxed overflow-x-auto"><code>{content}{caret}</code></pre>
+  </div>;
+}
+
+function isParagraphLine(lines: string[], index: number): boolean {
+  return lines[index].trim() !== '' && !isTableStart(lines, index) &&
+    !/^(?:```|#{1,4}\s|[-*+]\s|\d+[.)]\s|[-*_]{3,}\s*$)/.test(lines[index]);
 }
