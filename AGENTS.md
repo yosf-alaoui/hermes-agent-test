@@ -167,3 +167,8 @@ Every former god file is a **facade** (public entry points + the names other pac
 
 Long-form background: `website/docs/developer-guide/`. Workflow rules (PR/issue/review/salvage
 process) live in the `hermes-agent-dev` skill, not here.
+
+## Fork continuity
+
+Read `project-context/INDEX.md` and its linked requirements and handoff before work.
+Update the session log, index and handoff when finishing; follow their privacy and sync rules.
