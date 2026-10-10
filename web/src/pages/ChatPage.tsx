@@ -21,6 +21,7 @@ import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
+import { installArabicTerminalShaping } from "@/lib/terminal-arabic";
 import "@xterm/xterm/css/xterm.css";
 import { Button } from "@nous-research/ui/ui/components/button";
 import { Typography } from "@nous-research/ui/ui/components/typography/index";
@@ -796,6 +797,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
       sendComposedText(data);
     });
     term.open(host);
+    const cleanupArabicShaping = installArabicTerminalShaping(term, host);
 
     // IME composition guard (fixes #52111).
     //
@@ -1556,6 +1558,7 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
       mobileInputCleanup?.();
       compositionForwarder.dispose();
       cleanupTouchScroll();
+      cleanupArabicShaping();
       handleBrowserDropCleanup();
       if (metricsDebounce) clearTimeout(metricsDebounce);
       window.removeEventListener("resize", scheduleSyncTerminalMetrics);
@@ -2063,11 +2066,4 @@ export default function ChatPage({ isActive = true }: { isActive?: boolean }) {
       <PluginSlot name="chat:bottom" />
     </div>
   );
-}
-
-declare global {
-  interface Window {
-    __HERMES_SESSION_TOKEN__?: string;
-    __HERMES_AUTH_REQUIRED__?: boolean;
-  }
 }

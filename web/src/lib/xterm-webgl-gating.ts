@@ -96,6 +96,12 @@ export function shouldUseWebglRenderer(input: {
 // ligatures, reordering) — impossible for a per-glyph atlas. Southeast Asian
 // and Indic families; Bengali (U+0980–U+09FF) is the reported case (#58685).
 const COMPLEX_SCRIPT_RANGES: ReadonlyArray<readonly [number, number]> = [
+  [0x0600, 0x06ff], // Arabic
+  [0x0750, 0x077f], // Arabic Supplement
+  [0x0870, 0x089f], // Arabic Extended-B
+  [0x08a0, 0x08ff], // Arabic Extended-A
+  [0xfb50, 0xfdff], // Arabic Presentation Forms-A
+  [0xfe70, 0xfeff], // Arabic Presentation Forms-B
   [0x0900, 0x097f], // Devanagari
   [0x0980, 0x09ff], // Bengali
   [0x0a00, 0x0a7f], // Gurmukhi

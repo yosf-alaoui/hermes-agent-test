@@ -146,6 +146,11 @@ describe("probeWebglSupport", () => {
 });
 
 describe("textNeedsDomShaping", () => {
+  it("routes Arabic typing and responses through browser shaping", () => {
+    expect(textNeedsDomShaping("من أنت؟")).toBe(true);
+    expect(textNeedsDomShaping("مرحبًا Hermes 4B")).toBe(true);
+    expect(textNeedsDomShaping("\x1b[31mالعربية\x1b[0m")).toBe(true);
+  });
   it("flags Bengali conjunct text but not plain ASCII or box-drawing", () => {
     expect(textNeedsDomShaping("প্রযুক্তি ক্লিপবোর্ড যুক্তাক্ষর")).toBe(true);
     expect(textNeedsDomShaping("Devanagari: क्रिया")).toBe(true);
